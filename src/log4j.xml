@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration debug="false"
+	xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<appender name="ConsoleAppender" class="org.apache.log4j.ConsoleAppender">
+		<param name="Threshold" value="INFO"/>
+		<param name="Encoding" value="UTF-8" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} [%-5p][%-16.16t][%24.24c{1}] - %m%n" />
+		</layout>
+	</appender>		
+
+	<appender name="FullLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="Threshold" value="TRACE"/>
+		<param name="File" value="fulllog.log" />
+		<param name="MaxFileSize" value="10MB" />
+		<param name="MaxBackupIndex" value="2" />
+		<param name="Encoding" value="UTF-8" />
+		<layout class="org.apache.log4j.EnhancedPatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} [%-5p][%-16.16t][%c] - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="CurrentLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="Threshold" value="TRACE"/>
+		<param name="Encoding" value="UTF-8" />
+		<param name="File" value="current.log" />		
+		<param name="Append" value="false" />
+		<param name="MaxFileSize" value="100MB" />
+		<param name="MaxBackupIndex" value="0" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} [%-5p] - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="CurrentTestLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="Threshold" value="INFO"/>
+		<param name="Encoding" value="UTF-8" />
+		<param name="File" value="current_test.log" />		
+		<param name="Append" value="false" />
+		<param name="MaxFileSize" value="10MB" />
+		<param name="MaxBackupIndex" value="0" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} [%-5p] - %m%n" />
+		</layout>
+	</appender>
+			
+	<category name="org.apache">
+        <priority value="ERROR"/>
+    </category>
+
+	<root>
+		<priority value="TRACE" />
+		<appender-ref ref="ConsoleAppender" />		
+		<appender-ref ref="CurrentLog" />
+		<appender-ref ref="CurrentTestLog" />
+		<appender-ref ref="FullLog" />
+	</root>
+
+</log4j:configuration>
