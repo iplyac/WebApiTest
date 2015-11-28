@@ -98,9 +98,9 @@ public class HttpServiceUtils
     
     private static String doRequest(HttpRequestBase request, String body){
         if (request.getURI() == null || request.getURI().toString().isEmpty())
-            AssertHelper.fail("Request URL is not specified");                     
-        
-        logger.info("Request: " + request.getURI());
+            AssertHelper.fail("Request URL is not specified");
+
+        logger.info(String.format("Request: %s %s", request.getMethod(), request.getURI()));
         if(body != null){
             StringEntity json = new StringEntity(body, "UTF-8");
             json.setContentType("application/json");

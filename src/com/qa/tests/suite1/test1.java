@@ -1,9 +1,9 @@
-package com.qa.tests.suites;
+package com.qa.tests.suite1;
 
 import com.googlecode.junittoolbox.ParallelParameterized;
 import com.qa.framework.BasicTest;
 import com.qa.framework.TestDefinition;
-import com.qa.tests.ServiceRunner;
+import com.qa.tests.TestSuiteExecutor;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -15,13 +15,11 @@ import org.junit.runners.Parameterized;
 public class test1 extends BasicTest{
 
     private static Logger logger = Logger.getLogger(test1.class);
-    TestDefinition test;
+    TestDefinition test = new TestDefinition(1, "Im Service");
 
     @Test
     public void test() throws InterruptedException {
-        Thread.sleep(5000);
-//        if (test.id > 1) AssertHelper.fail("Fail");
-        logger.info(String.format("Details %s", test.name));
+        logger.info(test.name);
     }
 
     public test1(TestDefinition test){
@@ -37,10 +35,9 @@ public class test1 extends BasicTest{
     public void after(){
         logger.info(String.format("Finished %s", test.id));
     }
-
     @Parameterized.Parameters(name="{index}")
     public static Iterable<TestDefinition> parameters()
     {
-        return ServiceRunner.tests;
+        return TestSuiteExecutor.tests;
     }
 }

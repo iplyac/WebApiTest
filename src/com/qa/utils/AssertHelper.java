@@ -17,6 +17,7 @@ public class AssertHelper
     {
         try
         {
+
             org.junit.Assert.fail(msg);
         }
         catch (Error e)
