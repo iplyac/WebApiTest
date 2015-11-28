@@ -11,7 +11,7 @@ import java.util.List;
 
 @RunWith(FrameWorkServiceRunner.class)
 @Suite.SuiteClasses({
-        com.qa.tests.suite1.test1.class
+        com.qa.tests.suite1.test2.class
 })
 public class TestSuiteExecutor {
     private static Logger logger = Logger.getLogger(TestSuiteExecutor.class);
