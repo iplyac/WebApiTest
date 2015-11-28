@@ -6,8 +6,7 @@ import org.apache.log4j.Logger;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @RunWith(FrameWorkServiceRunner.class)
 @Suite.SuiteClasses({
@@ -17,8 +16,8 @@ import java.util.List;
 public class TestTaskExecutor {
     private static Logger logger = Logger.getLogger(TestTaskExecutor.class);
     public static List<ServiceSetting> settings = Arrays.asList(
-            new ServiceSetting(
-                    System.getenv("CONFIG_FILE")!=null?System.getenv("CONFIG_FILE"):"config.json",
-                    System.getenv("TEST_LIST_FILE")!=null?System.getenv("TEST_LIST_FILE"):"testList.json")
+             new ServiceSetting("config_DTSS.json", "testList_DTSS.json"),
+            new ServiceSetting("config.json", "testList_DTSS.json")
     );
+
 }
