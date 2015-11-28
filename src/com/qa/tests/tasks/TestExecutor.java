@@ -1,10 +1,13 @@
-package com.qa.tests.suite1;
+package com.qa.tests.tasks;
 
 import br.eti.kinoshita.testlinkjavaapi.model.Build;
 import br.eti.kinoshita.testlinkjavaapi.model.TestPlan;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.reflect.TypeToken;
+import com.googlecode.junittoolbox.ParallelParameterized;
+import com.qa.framework.ServiceSetting;
 import com.qa.framework.TestStatus;
 import com.qa.framework.annotations.*;
 import com.qa.framework.exceptions.TestException;
@@ -13,6 +16,7 @@ import com.qa.framework.helpers.TestResult;
 import com.qa.framework.reporting.HtmlReportBuilder;
 import com.qa.framework.reporting.TestReport;
 import com.qa.framework.reporting.TestStepReport;
+import com.qa.tests.TestTaskExecutor;
 import com.reltio.qa.Config;
 import com.reltio.qa.services.AccountService;
 import com.reltio.qa.services.StorageService;
@@ -23,6 +27,8 @@ import com.reltio.qa.utils.IOUtils;
 import freemarker.template.TemplateException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -35,14 +41,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
+@RunWith(value = ParallelParameterized.class)
 public class TestExecutor {
 
     private static final Logger logger = Logger.getLogger(TestExecutor.class);
 
-    private static final String TEST_CLASS_PACKAGE = "com.reltio.qa.tests";
+    private static final String TEST_CLASS_PACKAGE = "com.reltio.qa.settings";
     private static final String REPORTS_PATH = "reports//";
-    private static final String TEST_LIST_FILE = System.getenv("TEST_LIST_FILE")!=null?System.getenv("TEST_LIST_FILE"):"testList.json";
-    private static final String CONFIG_FILE = System.getenv("CONFIG_FILE")!=null?System.getenv("CONFIG_FILE"):"config.json";
+//    private static final String TEST_LIST_FILE = System.getenv("TEST_LIST_FILE")!=null?System.getenv("TEST_LIST_FILE"):"testList.json";
+//    private static final String CONFIG_FILE = System.getenv("CONFIG_FILE")!=null?System.getenv("CONFIG_FILE"):"config.json";
     private static final String TEST_PLAN_NAME = System.getenv("TEST_PLAN_NAME")!=null?System.getenv("TEST_PLAN_NAME"):"Reltio API regression test plan " + new SimpleDateFormat("yyyyMMdd").format(new Date());
     private static final String BUILD_NAME = System.getenv("BUILD_NAME")!=null?System.getenv("BUILD_NAME"):"my_build";
     private static final String DRIVE_CONFIG_PATH = "/qa-api-automatization/config/";
@@ -50,6 +57,7 @@ public class TestExecutor {
     private static final boolean USE_DRIVE = Boolean.parseBoolean(System.getenv("USE_DRIVE")!=null?System.getenv("USE_DRIVE"):"false");
     private static TestPlan testPlan;
     private static Build testBuild;
+    private static ServiceSetting setting;
 
     private class TestStepWrapper implements Comparable<TestStepWrapper> {
 
@@ -110,15 +118,41 @@ public class TestExecutor {
 
     }
 
-
-    @org.junit.Test
-    public void runTest(){
-        StorageService.downloadFromDrive("/qa-api-automatization/config/testList.json", System.getProperty("user.dir"));
+    @Parameterized.Parameters(name="{index}")
+    public static Iterable<ServiceSetting> parameters()
+    {
+        return TestTaskExecutor.settings;
     }
 
-    private static void initServices(){
+    public TestExecutor(ServiceSetting setting) {
+        this.setting = setting;
+    }
+
+    @org.junit.Test
+    public void RegressionTestSession() throws IOException{
+        logger.info(setting.getConfig());
+        logger.info(setting.getTestList());
+        if (USE_DRIVE){
+            StorageService.downloadFromDrive(DRIVE_CONFIG_PATH + setting.getConfig(), System.getProperty("user.dir"));
+            StorageService.downloadFromDrive(DRIVE_CONFIG_PATH + setting.getTestList(), System.getProperty("user.dir"));
+        }
+        Config.load(new File(setting.getConfig()));
+        String json = IOUtils.readFromFile(setting.getTestList());
+        initServices();
+//        TestExecutor ten = new TestExecutor();
+
+//        testPlan = TestLinkService.createTestPlan(TEST_PLAN_NAME, "", false, true);
+//        testBuild = TestLinkService.createBuild(testPlan, BUILD_NAME, "");
+
+        List<TestDefinition> testList = GsonUtils.getGson().fromJson(json,  new TypeToken<List<TestDefinition>>(){}.getType());
+
+/*        ten.addGlobalVars(testList);
+        ten.execute(testList);*/
+    }
+
+    private void initServices(){
         AccountService.init();
-        TestLinkService.init();
+//        TestLinkService.init();
     }
 
     private String rangesToDiscrete(String convertJson, String key){
@@ -167,7 +201,7 @@ public class TestExecutor {
 
         ((RollingFileAppender) Logger.getRootLogger().getAppender("CurrentLog")).rollOver();
 
-        logger.info("Starting execution of tests...");
+        logger.info("Starting execution of settings...");
         for (TestDefinition testDefinition : tests) {
             try {
                 Class<?> testClass = Class.forName(TEST_CLASS_PACKAGE + "." + testDefinition.name);
@@ -195,9 +229,11 @@ public class TestExecutor {
                 String errorText = "Unexpected error during test initialization: " + e.getMessage();
                 logger.error(errorText, e);
                 saveReport(new TestReport(testDefinition.name, ExceptionUtils.getStackTrace(e)), testDefinition.showReport(), testDefinition.testLinkReport());
+            }catch (Exception e){
+                e.printStackTrace();
             }
         }
-        logger.info("All tests were completed");
+        logger.info("All settings were completed");
     }
 
     private void saveReport(TestReport testReport, boolean showReport, boolean testLinkReport) {
@@ -237,11 +273,11 @@ public class TestExecutor {
         }
     }
 
-    private TestReport runTest(Class<?> testClass, Object instance, List<Integer> stepsToExecute, List<Integer> excludeSteps) {
+    private TestReport runTest(Class<?> testClass, Object instance, List<Integer> stepsToExecute, List<Integer> excludeSteps) throws Exception {
         return runTest(testClass, instance, stepsToExecute, excludeSteps, null, null);
     }
 
-    private TestReport runTest(Class<?> testClass, Object instance, List<Integer> stepsToExecute, List<Integer> excludeSteps, List<String> testCasesToExecute, List<String> excludeTestCases) {
+    private TestReport runTest(Class<?> testClass, Object instance, List<Integer> stepsToExecute, List<Integer> excludeSteps, List<String> testCasesToExecute, List<String> excludeTestCases) throws Exception {
         ((RollingFileAppender) Logger.getRootLogger().getAppender("CurrentTestLog")).rollOver();
 
         TestReport report = new TestReport(testClass.getSimpleName());
@@ -353,12 +389,15 @@ public class TestExecutor {
                     afterTest.invoke(instance);
                 }
 
-            } catch (IllegalAccessException | IllegalArgumentException
-                    | InvocationTargetException e) {
+            } catch (IllegalAccessException  e) {
                 Throwable parent = e.getCause();
                 report.setStatus(TestStatus.NotExecuted);
                 report.setExceptionMessage(String.format("Unexpected error occurred during execution of step%02d '%s':\n%s", stepNumber, stepTitle, ExceptionUtils.getStackTrace((parent != null) ? parent : e)));
                 logger.error(String.format("Unexpected error occurred during execution of step%02d of '%s' test: '%s'", stepNumber, testClass.getSimpleName(), (parent != null) ? parent.getMessage() : e.getMessage()), e);
+            }catch (InvocationTargetException e){
+                e.printStackTrace();
+            }catch (IllegalArgumentException e){
+                e.printStackTrace();
             }
             logger.info(String.format("Test '%s' completed", testClass.getSimpleName()));
         }
