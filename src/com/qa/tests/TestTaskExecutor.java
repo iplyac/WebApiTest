@@ -14,6 +14,11 @@ import java.util.*;
         com.qa.tests.tasks.TestExecutor.class
 })
 public class TestTaskExecutor {
+
+    /**
+     * qqqq
+     *
+     */
     private static Logger logger = Logger.getLogger(TestTaskExecutor.class);
     public static List<ServiceSetting> settings = Arrays.asList(
              new ServiceSetting("config_DTSS.json", "testList_DTSS.json"),
